@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
             `current-users`,
             `max-clients`,
             `verified`,
-            `is-official`,            
+            `is-official`,
             `ip`,
             `port`,
             `terrain-name`,
@@ -300,9 +300,9 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             `start-time`,
             `version`,
             `challenge`,
-        	`verified`,
-        	`has-password`,
-        	`has-rcon`
+            `verified`,
+            `has-password`,
+            `has-rcon`
         ) VALUES (
             '$server_name',
             '$server_desc',
@@ -314,9 +314,9 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             NOW(),
             '$server_ver',
             '$challenge',
-        	$verified_level,
-        	$server_pw,
-        	$server_rcon);";
+            $verified_level,
+            $server_pw,
+            $server_rcon);";
             
     $result = $mysqli->query($sql);
     if ($result === false)
@@ -391,4 +391,3 @@ else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
     
     die_json(200, 'Success!');
 }
-
