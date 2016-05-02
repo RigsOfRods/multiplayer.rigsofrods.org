@@ -9,7 +9,7 @@ Provides a RESTful API to register and query multiplayer servers. Uses JSON.
 ### GET
 
 Params:
-- **version (string, optional)**: RoRNet protocol version. Should have form 'RoRNet_NN'.
+- **version** (string, optional): RoRNet protocol version. Should have form 'RoRNet_NN'.
 
 Output: text/html page.
 
@@ -53,6 +53,22 @@ Output: JSON in form:
 Params (submitted via URL):
 - **challenge** (string)
 - **current-users** (int)
+
+Output: JSON in form:
+
+    {
+        'result': true,
+        'message': 'Success'
+    }
+
+- On success, HTTP 200 + JSON as above.
+- On bad parameters, HTTP 400 + JSON with info.
+- On internal failure (database for example), HTTP 500 + JSON with info.
+
+### DELETE
+
+Params (submitted via URL):
+- **challenge** (string)
 
 Output: JSON in form:
 
