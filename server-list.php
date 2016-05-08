@@ -223,7 +223,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
         $is_official = true;
     }
     
-    require 'serverlist-register.include.php';
+    require 'register-server.include.php';
     
     $is_rcon_enabled = isset($_args['is-rcon-enabled']) && $_args['is-rcon-enabled'] == 1;
     $uses_password = isset($_args['uses-password']) && $_args['uses-password'] == 1;
