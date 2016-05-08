@@ -1,4 +1,6 @@
 # URLs for multiplayer.rigsofrods.org
 
 RewriteEngine On
-RewriteRule ^server-list server-list.php
+
+RewriteRule   ^server-list      server-list.php
+RewriteRule   ^get-public-ip    get-public-ip.php
