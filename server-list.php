@@ -76,7 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
             $sql_and_heart
             $sql_and_version
         ORDER BY
-            `is-official`, (`currentusers`/`maxclients`) DESC, name";
+            `is-official`,
+            (`current-users`/`max-clients`) DESC,
+            name";
     
     $result = $mysqli->query($sql);
     if ($result === false)
@@ -89,10 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     // HTML for compatibility with RoRConfig
     // TODO: header('content-type: application/json; charset: utf-8');
     
-    print('
+    print("
+        <!DOCTYPE html>
         <html>
         <head>
             <title>Rigs of Rods multiplayer serverlist</title>
+            <style>{$config['html-serverlist']['css']}</style>
         </head>
         <body>
         <table>
@@ -101,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
             <th>Type</th>
             <th>Name</th>
             <th>Terrain</th>
-        </tr>');
+        </tr>");
         
     while ($row = $result->fetch_assoc())
     {
@@ -135,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
 
     }
     
-    if ($result->num_rows() == 0)
+    if ($result->num_rows == 0)
     {
         if (isset($_GET['version']))
         {
@@ -170,12 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     $result = $mysqli->query($sql);
     if ($result === false)
     {
-        exit("</html>"); // Whatever
+        exit("</body></html>"); // Whatever
     }
     
     print("<h3>Full servers</h3>");
     
-    if ($result->num_rows() > 0)
+    if ($result->num_rows > 0)
     {
         print("<ul>");    
         while ($row = $result->fetch_assoc())
@@ -190,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     {
         print("<p>None found.</p>");
     }  
-    print("</html>");
+    print("</body></html>");
     $mysqli->close();
 }
 

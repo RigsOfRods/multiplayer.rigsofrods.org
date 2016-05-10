@@ -26,6 +26,17 @@ $config = [
         ],
         'blacklist' => [
         ]
+    ],
+    "html-serverlist" => [
+        "title" => "Rigs of Rods multiplayer serverlist",
+        "css" => "
+            html { 
+                font-family: Verdana, Geneva, sans-serif; 
+            }
+            table, th, td {
+                border: 1px solid gray;
+                border-collapse: collapse;
+                padding: 5px;
+            }"
     ]
 ];
-
