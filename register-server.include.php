@@ -12,9 +12,7 @@ function generate_random_key($length)
     return $key;
 }
 
-// Ported from old scripts.
-// I'm not quite sure what it returns ~ only_a_ptr, 05/2016
-function verify_server($ip, $port, $version)
+function verify_server($config, $ip, $port, $version)
 {
     $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
     if ($socket === false)
@@ -24,22 +22,34 @@ function verify_server($ip, $port, $version)
     
     $timeout = 10;
     $time = time();
+    // Means 'in progress', see https://bobobobo.wordpress.com/2008/11/09/
+    define('WINSOCK_WSAEWOULDBLOCK', 10035);
+    // Means 'already connected'
+    define('WINSOCK_WSAEISCONN', 10056);
     
+    // See: http://stackoverflow.com/a/9761659
     socket_set_nonblock($socket);
     while (!@socket_connect($socket, $ip, $port))
     {
         $err = socket_last_error($socket);
-        if ($err == 115 || $err == 114)
+        if ($err == WINSOCK_WSAEISCONN)
         {
-            if ((time() - $time) >= $timeout)
-            {
-              socket_close($socket);
-              return null;
-            }
-            sleep(1);
-            continue;
+            break; // On Windows, socket_connect() won't return TRUE
         }
-        return null;
+        elseif (($err != WINSOCK_WSAEWOULDBLOCK) && 
+                ($err != SOCKET_EINPROGRESS) &&
+                ($err != SOCKET_EALREADY))
+        {
+            socket_close($socket);
+            return null;
+        }    
+
+        if ((time() - $time) >= $timeout)
+        {
+            socket_close($socket);
+            return null;
+        }
+        usleep(500000);        
     }
     socket_set_block($socket);
     
@@ -57,12 +67,18 @@ function verify_server($ip, $port, $version)
     {
         $bin = pack("IIIa12", $type, $source, $size, $version);
     }
-    socket_write($socket, $bin, strlen($bin));
+    $written = socket_write($socket, $bin, strlen($bin));
+    if ($written === false)
+    {
+        socket_close($socket);
+        return null;
+    }
     
     $out = socket_read($socket, 2048);
     $len = strlen(bin2hex($out));
     if ($len == 0)
     {
+        socket_close($socket);
         return null;
     }
     
@@ -70,7 +86,7 @@ function verify_server($ip, $port, $version)
     {
         $result = unpack("Itype/Isource/Isize", $out);
     }  
-    else if($len >= 54 && $cversion > 0)
+    else if($len >= 54 && $version_checked)
     {
         $result = unpack("Itype/Isource/Istream/Isize", $out);
         $ucmd = "Itype/Isource/Istream/Isize/a".((int)$result['size'])."data";
