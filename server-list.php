@@ -375,7 +375,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
             `last-heartbeat` = NOW(),
             `current-users` = $num_users
         WHERE
-            `challenge` = $challenge";
+            `challenge` = '$challenge'";
     if ($mysqli->query($sql) !== true)
     {
         die_json(500, 'Server error, failed to update database.');
