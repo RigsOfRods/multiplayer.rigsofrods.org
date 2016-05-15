@@ -396,8 +396,8 @@ else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
     
     $mysqli = connect_mysqli_or_die($config);
     
-    $sql = "DELETE FROM `servers` WHERE `challenge` = "
-        . $mysqli->real_escape_string($_args['challenge']);
+    $challenge = $mysqli->real_escape_string($_args['challenge']);
+    $sql = "DELETE FROM `servers` WHERE `challenge` = '$challenge'";
     if ($mysqli->query($sql) !== true)
     {
         die_json(500, 'Server error, failed to update database.');
