@@ -23,7 +23,7 @@ function check_args_or_die($_args, $req_args)
     }     
 }
 
-function connect_mysqli_or_die()
+function connect_mysqli_or_die($config)
 {
     $db_config = $config['database'];
     $mysqli = new MySQLi($db_config['host'], $db_config['user'], $db_config['password'], $db_config['name']);
@@ -257,15 +257,24 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
         $verified_level = 2;
     } 
 
-    $mysqli = connect_mysqli_or_die();
+    $mysqli = connect_mysqli_or_die($config);
     
     // Check servername is unique
     $t = time()-3600; // Ported from old serverlist scripts
     $server_name = $mysqli->real_escape_string($_args['name']);
-    $uniq_sql = "SELECT * FROM servers
-        WHERE name = \"{$server_name}\" and state = 0 and lastheartbeat > $t";
+    $uniq_sql = "
+        SELECT * 
+        FROM `servers`
+        WHERE
+            `name` = '{$server_name}'
+            AND `state` = 0
+            AND `last-heartbeat` > $t";
     $uniq_result = $mysqli->query($uniq_sql);
-    if ($uniq_result->num_rows() > 0)
+    if ($uniq_result === false)
+    {
+        die_json(500, 'Cannot verify unique name against database.');
+    }
+    if ($uniq_result->num_rows > 0)
     {
         die_json(409, 'Your server name is already used.'); // HTTP 409 Conflict
     }
@@ -273,6 +282,8 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     // Insert the server
     function fetch_and_escape_arg($arg_name, $default_val)
     {
+        global $_args, $mysqli;
+        
         if (isset($_args[$arg_name]))
         {
             return $mysqli->real_escape_string($_args[$arg_name]);
@@ -311,16 +322,16 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             '$server_name',
             '$server_desc',
             '$server_ip',
-            $server_port,
+            '$server_port',
             '$server_terrn',
-            $server_max,
+            '$server_max',
             NOW(),
             NOW(),
             '$server_ver',
             '$challenge',
-            $verified_level,
-            $server_pw,
-            $server_rcon);";
+            '$verified_level',
+            '$server_pw',
+            '$server_rcon');";                     
             
     $result = $mysqli->query($sql);
     if ($result === false)
@@ -354,7 +365,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
     
     check_args_or_die($_args, array('challenge', 'current-users'));
     
-    $mysqli = connect_mysqli_or_die();
+    $mysqli = connect_mysqli_or_die($config);
     
     $num_users = intval($_args['current-users']);
     $challenge = $mysqli->real_escape_string($_args['challenge']);
@@ -384,7 +395,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
     
     check_args_or_die($_args, array('challenge'));
     
-    $mysqli = connect_mysqli_or_die();
+    $mysqli = connect_mysqli_or_die($config);
     
     $sql = "DELETE FROM `servers` WHERE `challenge` = "
         . $mysqli->real_escape_string($_args['challenge']);
