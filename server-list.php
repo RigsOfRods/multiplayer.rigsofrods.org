@@ -239,8 +239,6 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     }
     $challenge = sha1(generate_random_key(255) + $remote_ip + $_args['ip'] + $_args['port'] + time());
     
-    // PORTED FROM OLD SERVERLIST: wait a second to give the server a chance to come up
-    sleep(2);
     $verify_result = verify_server($config, $_args['ip'], $_args['port'], $_args['version']);
     if ($verify_result === null)
     {
