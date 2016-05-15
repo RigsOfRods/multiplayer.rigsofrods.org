@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
             array_push($type, "official");
             $name = "Official: {$row['name']}";
         }
-        if ($row['is-password-protected'])
+        if ($row['has-password'])
         {
             array_push($type, "password");
             $url = "rorserver://user:pass@";
