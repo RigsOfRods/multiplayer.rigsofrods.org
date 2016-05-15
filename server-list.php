@@ -51,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     $sql_and_version = "";
     if (isset($_GET['version']))
     {
-        $sql_and_version .= ' AND `version` = ' . $mysqli->real_escape_string($_GET['version']);
+        $version = $mysqli->real_escape_string($_GET['version']);
+        $sql_and_version .= " AND `version` = '$version'";
     }
     
     $sql_and_heart = ' AND `last-heartbeat` >= ' . (time() - $config['heartbeat']['timeout-seconds']);
