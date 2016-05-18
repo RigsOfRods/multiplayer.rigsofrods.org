@@ -53,19 +53,20 @@ function verify_server($config, $ip, $port, $version)
     }
     socket_set_block($socket);
     
-    $version = "MasterServer";
-    $type = 1000; // 1000 = MSG2_HELLO
-    $source = 5000; // no error messages on that number
-    $size = strlen($version);
-    $stream = 0;
+    $poke_payload = "MasterServer";
+    $poke_msg = 1000; // RoRNet: MSG2_HELLO
+    $poke_source = 5000; // (Magic) no error messages on that number
+    $poke_payload_length = strlen($poke_payload);
+    $poke_stream_id = 0;
     $version_checked = ($version != null) && in_array($version, $config['protocols']['supported']);
     if ($version_checked)
     {
-        $bin = pack("IIIIa12", $type, $source, $stream, $size, $version);
+        $bin = pack("IIIIa12", 
+            $poke_msg, $poke_source, $poke_stream_id, $poke_payload_length, $poke_payload);
     }
     else
     {
-        $bin = pack("IIIa12", $type, $source, $size, $version);
+        $bin = pack("IIIa12", $poke_msg, $poke_source, $poke_payload_length, $poke_payload);
     }
     $written = socket_write($socket, $bin, strlen($bin));
     if ($written === false)
