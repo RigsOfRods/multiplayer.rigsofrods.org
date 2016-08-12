@@ -1,6 +1,31 @@
 <?php
 
+define('LOG_LEVEL_ERROR',   0);
+define('LOG_LEVEL_WARNING', 1);
+define('LOG_LEVEL_INFO',    2);
+define('LOG_LEVEL_DETAIL',  3);
+define('LOG_LEVEL_DEBUG',   4);
+
 require 'config.include.php';
+
+function log_msg($level, $msg)
+{
+    global $config;
+    
+    if ($level > $config['logging']['verbosity'])
+    {
+        return;
+    }
+    $d = new DateTime();
+    $line = $d->format('[Y-m-d H:i:s]') . " " . $msg . "\n";
+    file_put_contents($config['logging']['filename'], $line, FILE_APPEND);
+}
+
+function log_error ($msg) { log_msg(LOG_LEVEL_ERROR,   $msg); }
+function log_warn  ($msg) { log_msg(LOG_LEVEL_WARNING, $msg); }
+function log_info  ($msg) { log_msg(LOG_LEVEL_INFO,    $msg); }
+function log_detail($msg) { log_msg(LOG_LEVEL_DETAIL,  $msg); }
+function log_debug ($msg) { log_msg(LOG_LEVEL_DEBUG,   $msg); }
 
 function die_json($http_code, $message)
 {
@@ -29,10 +54,13 @@ function connect_mysqli_or_die($config)
     $mysqli = new MySQLi($db_config['host'], $db_config['user'], $db_config['password'], $db_config['name']);
     if ($mysqli->connect_errno != 0)
     {
+        log_error("Cannot connect to DB: {$mysqli->error}");
         die_json(500, 'Server error, cannot connect to database.');
     }
     return $mysqli;
 }
+
+log_info("New request, method: {$_SERVER['REQUEST_METHOD']}");
 
 // -----------------------------------------------------------------------------
 // GET = retrieve serverlist
@@ -206,7 +234,9 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 {
     header('content-type: application/json; charset: utf-8');
     
-    $_args = $_GET;
+    $in_json = trim(file_get_contents('php://input'));
+    log_detail("JSON input:" . ($in_json != "" ? "\n{$in_json}" : " ~EMPTY~"));
+    $_args = json_decode($in_json, true);
 
     // Check required arguments
     check_args_or_die($_args, array('name', 'ip', 'port', 'terrain-name', 'max-clients', 'version'));
@@ -214,6 +244,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     // Check IP blacklist
     if (in_array($_args['ip'], $config['ip-lists']['blacklist']))
     {
+        log_warn("Blacklisted IP: {$_args['ip']}");
         die_json(403, 'This server IP is blacklisted');
     }
     
@@ -228,7 +259,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
         $is_official = true;
     }
     
-    require 'register-server.include.php';
+    require_once 'register-server.include.php';
     
     $is_rcon_enabled = isset($_args['is-rcon-enabled']) && $_args['is-rcon-enabled'] == 1;
     $uses_password = isset($_args['uses-password']) && $_args['uses-password'] == 1;

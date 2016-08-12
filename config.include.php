@@ -38,5 +38,9 @@ $config = [
                 border-collapse: collapse;
                 padding: 5px;
             }"
+    ],
+    "logging" => [
+        "filename" => "masterserver.log", // Set null to disable
+        "verbosity" => LOG_LEVEL_DEBUG
     ]
 ];
