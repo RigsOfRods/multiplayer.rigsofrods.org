@@ -41,13 +41,19 @@ function die_json($http_code, $message)
 
 function check_args_or_die($_args, $req_args)
 {
+    $missing = array();
     foreach ($req_args as $key)
     {
         if (!isset($_args[$key]))
         {
-            die_json(400, 'At least 1 required argument is missing');
+            $missing[] = $key;            
         }
-    }     
+    }
+    
+    if (count($missing) > 0)
+    {
+        die_json(400, 'Missing required argument(s): ' . implode(", ", $missing));
+    }    
 }
 
 function connect_mysqli_or_die($config)
@@ -60,6 +66,13 @@ function connect_mysqli_or_die($config)
         die_json(500, 'Server error, cannot connect to database.');
     }
     return $mysqli;
+}
+
+function get_json_input()
+{
+    $in_json = trim(file_get_contents('php://input'));
+    log_detail("JSON input:" . ($in_json != "" ? "\n{$in_json}" : " ~EMPTY~"));
+    return json_decode($in_json, true);
 }
 
 log_info("New request, method: {$_SERVER['REQUEST_METHOD']}");
@@ -236,9 +249,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 {
     header('content-type: application/json; charset: utf-8');
     
-    $in_json = trim(file_get_contents('php://input'));
-    log_detail("JSON input:" . ($in_json != "" ? "\n{$in_json}" : " ~EMPTY~"));
-    $_args = json_decode($in_json, true);
+    $_args = get_json_input();
 
     // Check required arguments
     check_args_or_die($_args, array('name', 'ip', 'port', 'terrain-name', 'max-clients', 'version'));
@@ -395,28 +406,30 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
 {
     header('content-type: application/json; charset: utf-8');
-    $_args = $_GET;
+    $_args = get_json_input();
     
-    check_args_or_die($_args, array('challenge', 'current-users'));
+    check_args_or_die($_args, array('challenge', 'users'));
     
     $mysqli = connect_mysqli_or_die($config);
     
-    $num_users = intval($_args['current-users']);
+    $num_users = (int) count($_args['users']);
     $challenge = $mysqli->real_escape_string($_args['challenge']);
-    $sql = 
-        "UPDATE 
-            `servers`
-        SET
-            `last-heartbeat` = NOW(),
-            `current-users` = $num_users
-        WHERE
-            `challenge` = '$challenge'";
+    $json_users = json_encode($_args['users'], JSON_PRETTY_PRINT);
+    $sql = "UPDATE `servers`
+            SET
+                `last-heartbeat` = NOW(),
+                `num-users`      = $num_users,
+                `json-userlist`  = '$json_users'
+            WHERE
+                `challenge` = '$challenge'";
+            
     if ($mysqli->query($sql) !== true)
     {
+        log_error("Heartbeat: failed to update database, message: {$mysqli->error}");
         die_json(500, 'Server error, failed to update database.');
     }
 
-    die_json(200, 'Success!');
+    die_json(200, 'Heartbeat OK');
 }
 
 // -----------------------------------------------------------------------------
