@@ -34,6 +34,8 @@ function die_json($http_code, $message)
         'result'  => ($http_code == 200),
         'message' => $message
     );
+    log_info("Response: HTTP {$http_code}, message: {$message}");
+    log_detail("JSON:\n" . json_encode($answer, JSON_PRETTY_PRINT));
     die(json_encode($answer));    
 }
 
@@ -375,13 +377,15 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     
     $mysqli->close();
     
-    http_response_code(200);
     $answer = array(
         'result'         => true,
         'message'        => 'Server sucessfully registered',
         'challenge'      => $challenge,
         'verified-level' => $verified_level
     );
+    http_response_code(200);
+    log_info("Response: HTTP 200, message: {$answer['message']}");
+    log_detail("JSON output:\n" . json_encode($answer, JSON_PRETTY_PRINT));
     die(json_encode($answer));
 }
 
