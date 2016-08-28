@@ -438,7 +438,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
 else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 {
     header('content-type: application/json; charset: utf-8');
-    $_args = $_GET;
+    $_args = get_json_input();
     
     check_args_or_die($_args, array('challenge'));
     
