@@ -418,7 +418,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
     $sql = "UPDATE `servers`
             SET
                 `last-heartbeat` = NOW(),
-                `num-users`      = $num_users,
+                `current-users`  = $num_users,
                 `json-userlist`  = '$json_users'
             WHERE
                 `challenge` = '$challenge'";
