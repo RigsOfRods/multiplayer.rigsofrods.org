@@ -97,6 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         $version = $mysqli->real_escape_string($_GET['version']);
         $sql_and_version .= " AND `version` = '$version'";
     }
+  
+    // PORTED FROM OLD SERVERLIST: delete old offline servers (1 hour)
+    $t = time()-3600; // Ported from old serverlist scripts
+    $purge_sql = "DELETE FROM `servers` WHERE `lastheartbeat` < $t;";
+    $mysqli->query($purge_sql); // We don't care about the result.
+   
     
     $sql_and_heart = ' AND `last-heartbeat` >= ' . (time() - $config['heartbeat']['timeout-seconds']);
     
@@ -381,12 +387,6 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     {
         die_json(500, 'Failed to add server to database.');
     }
-    
-    // PORTED FROM OLD SERVERLIST: delete old offline servers (1 hour)
-    $purge_sql = "DELETE FROM `servers` WHERE `lastheartbeat` < $t;";
-    $mysqli->query($purge_sql); // We don't care about the result.
-    
-    $mysqli->close();
     
     $answer = array(
         'result'         => true,
