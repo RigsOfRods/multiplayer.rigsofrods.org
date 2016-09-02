@@ -98,9 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         $sql_and_version .= " AND `version` = '$version'";
     }
   
-    // PORTED FROM OLD SERVERLIST: delete old offline servers (1 hour)
-    $t = time()-3600; // Ported from old serverlist scripts
-    $purge_sql = "DELETE FROM `servers` WHERE `lastheartbeat` < $t;";
+    // PORTED FROM OLD SERVERLIST: delete old offline servers
+    $t = time()-1500; // Ported from old serverlist scripts
+    $purge_sql = "DELETE FROM `servers` WHERE `last-heartbeat` < $t;";
     $mysqli->query($purge_sql); // We don't care about the result.
    
     
