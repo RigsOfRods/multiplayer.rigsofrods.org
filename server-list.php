@@ -226,11 +226,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     {
         exit("</body></html>"); // Whatever
     }
-    
-    print("<h3>Full servers</h3>");
-    
+      
     if ($result->num_rows > 0)
     {
+      print("<h3>Full servers</h3>");
         print("<ul>");    
         while ($row = $result->fetch_assoc())
         {
@@ -240,10 +239,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         }
         print("</ul>");
     }
-    else
-    {
-        print("<p>None found.</p>");
-    }  
     print("</body></html>");
     $mysqli->close();
 }
