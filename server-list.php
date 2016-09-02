@@ -346,6 +346,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     $server_ver   = fetch_and_escape_arg('version', null);
     $server_pw    = fetch_and_escape_arg('uses-password', 0);
     $server_rcon  = fetch_and_escape_arg('is-rcon-enabled', 0);
+    $t = time();
     
     $sql = "
         INSERT INTO servers (
@@ -369,8 +370,8 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             '$server_port',
             '$server_terrn',
             '$server_max',
-            NOW(),
-            NOW(),
+            '$t',
+            '$t',
             '$server_ver',
             '$challenge',
             '$verified_level',
@@ -410,9 +411,11 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
     $num_users = (int) count($_args['users']);
     $challenge = $mysqli->real_escape_string($_args['challenge']);
     $json_users = json_encode($_args['users'], JSON_PRETTY_PRINT);
+    $t = time();
+  
     $sql = "UPDATE `servers`
             SET
-                `last-heartbeat` = NOW(),
+                `last-heartbeat` = $t,
                 `current-users`  = $num_users,
                 `json-userlist`  = '$json_users'
             WHERE
