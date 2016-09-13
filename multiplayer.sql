@@ -21,7 +21,7 @@ CREATE TABLE `servers` (
   `state` int(11) NOT NULL DEFAULT '0',
   `challenge` text NOT NULL,
   `verified` int(11) NOT NULL DEFAULT '0',
-  `userlist` text NOT NULL,
+  `json-userlist` text NOT NULL,
   `country` text,
   `users` text NOT NULL,
   `has-rcon` tinyint(1) NOT NULL,

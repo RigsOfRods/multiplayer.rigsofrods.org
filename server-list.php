@@ -362,7 +362,11 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             `challenge`,
             `verified`,
             `has-password`,
-            `has-rcon`
+            `has-rcon`,
+            `json-userlist`,
+            `users`,
+            `is-official`
+            
         ) VALUES (
             '$server_name',
             '$server_desc',
@@ -376,11 +380,15 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             '$challenge',
             '$verified_level',
             '$server_pw',
-            '$server_rcon');";                     
+            '$server_rcon',
+            '[]',
+            '[]',
+            '0');";                     
             
     $result = $mysqli->query($sql);
     if ($result === false)
     {
+     	log_error("Failed to add server to database: {$mysqli->error}");
         die_json(500, 'Failed to add server to database.');
     }
     
