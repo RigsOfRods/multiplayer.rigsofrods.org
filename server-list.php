@@ -155,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
             <th>Type</th>
             <th>Name</th>
             <th>Terrain</th>
+            <th>Country</th>
         </tr>");
         
     while ($row = $result->fetch_assoc())
@@ -179,12 +180,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         $url .= "{$row['ip']}:{$row['port']}/";
         $types = implode($type, ', ');
         
+        $country = geoip_country_name_by_name($row['ip']);
+        
         print("
             <tr>
                 <td>{$row['current-users']} / {$row['max-clients']}</td>
                 <td>$types</td>
                 <td><a href='$url'>$name</a></td>
                 <td>{$row['terrain-name']}</td>
+                <td>$country</td>
             </tr>");
 
     }
@@ -193,11 +197,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     {
         if (isset($_GET['version']))
         {
-            print("<tr><td colspan='4'>No available servers found for your version.</td></tr>");
+            print("<tr><td colspan='5'>No available servers found for your version.</td></tr>");
         }
         else
         {
-            print("<tr><td colspan='4'>No available servers found.</td></tr>");
+            print("<tr><td colspan='5'>No available servers found.</td></tr>");
         }
     }
     
@@ -263,14 +267,11 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     }
     
     // Check authority
-    $is_official = false;
-    if (isset($_args['is-official']) && $_args['is-official'] == 1)
+    $is_official = 0;
+
+    if (in_array($_args['ip'], $config['ip-lists']['official']))
     {
-        if (!in_array($_args['ip'], $config['ip-lists']['official']))
-        {
-            die_json(403, 'Your server IP is not whitelisted as official');
-        }
-        $is_official = true;
+       $is_official = 1;
     }
     
     require_once 'register-server.include.php';
@@ -296,11 +297,12 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
         die_json(503, $message);   
     }
     $verified_level = 1;
+  /*
     if ($is_official || in_array($_args['ip'], $config['ip-lists']['official']))
     {
         $verified_level = 2;
     } 
-
+*/
     $mysqli = connect_mysqli_or_die($config);
     
     // Check servername is unique
@@ -383,12 +385,12 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             '$server_rcon',
             '[]',
             '[]',
-            '0');";                     
+            '$is_official');";                     
             
     $result = $mysqli->query($sql);
     if ($result === false)
     {
-     	log_error("Failed to add server to database: {$mysqli->error}");
+        log_error("Failed to add server to database: {$mysqli->error}");
         die_json(500, 'Failed to add server to database.');
     }
     
