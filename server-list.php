@@ -97,6 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         $version = $mysqli->real_escape_string($_GET['version']);
         $sql_and_version .= " AND `version` = '$version'";
     }
+  
+    // PORTED FROM OLD SERVERLIST: delete old offline servers
+    $t = time()-1500; // Ported from old serverlist scripts
+    $purge_sql = "DELETE FROM `servers` WHERE `last-heartbeat` < $t;";
+    $mysqli->query($purge_sql); // We don't care about the result.
+   
     
     $sql_and_heart = ' AND `last-heartbeat` >= ' . (time() - $config['heartbeat']['timeout-seconds']);
     
@@ -149,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
             <th>Type</th>
             <th>Name</th>
             <th>Terrain</th>
+            <th>Country</th>
         </tr>");
         
     while ($row = $result->fetch_assoc())
@@ -173,12 +180,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         $url .= "{$row['ip']}:{$row['port']}/";
         $types = implode($type, ', ');
         
+        $country = geoip_country_name_by_name($row['ip']);
+        
         print("
             <tr>
                 <td>{$row['current-users']} / {$row['max-clients']}</td>
                 <td>$types</td>
                 <td><a href='$url'>$name</a></td>
                 <td>{$row['terrain-name']}</td>
+                <td>$country</td>
             </tr>");
 
     }
@@ -187,11 +197,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     {
         if (isset($_GET['version']))
         {
-            print("<tr><td colspan='4'>No available servers found for your version.</td></tr>");
+            print("<tr><td colspan='5'>No available servers found for your version.</td></tr>");
         }
         else
         {
-            print("<tr><td colspan='4'>No available servers found.</td></tr>");
+            print("<tr><td colspan='5'>No available servers found.</td></tr>");
         }
     }
     
@@ -220,11 +230,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
     {
         exit("</body></html>"); // Whatever
     }
-    
-    print("<h3>Full servers</h3>");
-    
+      
     if ($result->num_rows > 0)
     {
+      print("<h3>Full servers</h3>");
         print("<ul>");    
         while ($row = $result->fetch_assoc())
         {
@@ -234,10 +243,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET')
         }
         print("</ul>");
     }
-    else
-    {
-        print("<p>None found.</p>");
-    }  
     print("</body></html>");
     $mysqli->close();
 }
@@ -262,14 +267,11 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     }
     
     // Check authority
-    $is_official = false;
-    if (isset($_args['is-official']) && $_args['is-official'] == 1)
+    $is_official = 0;
+
+    if (in_array($_args['ip'], $config['ip-lists']['official']))
     {
-        if (!in_array($_args['ip'], $config['ip-lists']['official']))
-        {
-            die_json(403, 'Your server IP is not whitelisted as official');
-        }
-        $is_official = true;
+       $is_official = 1;
     }
     
     require_once 'register-server.include.php';
@@ -295,11 +297,12 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
         die_json(503, $message);   
     }
     $verified_level = 1;
+  /*
     if ($is_official || in_array($_args['ip'], $config['ip-lists']['official']))
     {
         $verified_level = 2;
     } 
-
+*/
     $mysqli = connect_mysqli_or_die($config);
     
     // Check servername is unique
@@ -345,6 +348,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
     $server_ver   = fetch_and_escape_arg('version', null);
     $server_pw    = fetch_and_escape_arg('uses-password', 0);
     $server_rcon  = fetch_and_escape_arg('is-rcon-enabled', 0);
+    $t = time();
     
     $sql = "
         INSERT INTO servers (
@@ -360,7 +364,11 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             `challenge`,
             `verified`,
             `has-password`,
-            `has-rcon`
+            `has-rcon`,
+            `json-userlist`,
+            `users`,
+            `is-official`
+            
         ) VALUES (
             '$server_name',
             '$server_desc',
@@ -368,25 +376,23 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST')
             '$server_port',
             '$server_terrn',
             '$server_max',
-            NOW(),
-            NOW(),
+            '$t',
+            '$t',
             '$server_ver',
             '$challenge',
             '$verified_level',
             '$server_pw',
-            '$server_rcon');";                     
+            '$server_rcon',
+            '[]',
+            '[]',
+            '$is_official');";                     
             
     $result = $mysqli->query($sql);
     if ($result === false)
     {
+        log_error("Failed to add server to database: {$mysqli->error}");
         die_json(500, 'Failed to add server to database.');
     }
-    
-    // PORTED FROM OLD SERVERLIST: delete old offline servers (1 hour)
-    $purge_sql = "DELETE FROM `servers` WHERE `lastheartbeat` < $t;";
-    $mysqli->query($purge_sql); // We don't care about the result.
-    
-    $mysqli->close();
     
     $answer = array(
         'result'         => true,
@@ -415,10 +421,12 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT')
     $num_users = (int) count($_args['users']);
     $challenge = $mysqli->real_escape_string($_args['challenge']);
     $json_users = json_encode($_args['users'], JSON_PRETTY_PRINT);
+    $t = time();
+  
     $sql = "UPDATE `servers`
             SET
-                `last-heartbeat` = NOW(),
-                `num-users`      = $num_users,
+                `last-heartbeat` = $t,
+                `current-users`  = $num_users,
                 `json-userlist`  = '$json_users'
             WHERE
                 `challenge` = '$challenge'";
