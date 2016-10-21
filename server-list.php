@@ -142,17 +142,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         header("HTTP/1.1 500 Internal Server Error");
         die("Server error, cannot read database.");
     }
+   
     
     if (isset($_GET["json"])) {
         header('content-type: application/json; charset: utf-8');
         $rows = array();
         while ($row = $result->fetch_assoc()) {
+            foreach ($row as $key => $value) {
+              if(is_numeric($value))
+                $row[$key] = intval($value);
+            }
             $rows[] = $row;
-        }
-        print json_encode($rows);
-        
-    } else { // HTML for compatibility with RoRConfig
-        
+        }   
+        print json_encode($rows);        
+    } else {// HTML for compatibility with RoRConfig
+      
         header('content-type: text/html; charset: utf-8');
         
         print("
