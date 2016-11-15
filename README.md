@@ -1,6 +1,6 @@
 # Rigs of Rods multiplayer API
 
-Will become available at multiplayer.rigsofrods.org
+Available online at http://multiplayer.rigsofrods.org
 
 ## Serverlist
 
@@ -10,26 +10,30 @@ Provides a RESTful API to register and query multiplayer servers. Uses JSON.
 
 Params:
 - **version** (string, optional): RoRNet protocol version. Should have form 'RoRNet_NN'.
+- **json** (bool, optional): Should output be JSON?
 
 Output: text/html page.
 
-- On success, HTTP 200 + table of webservers.
+- On success, HTTP 200 + HTML table of webservers (or JSON with 'json' flag)
     This is to remain compatible with older RoR releases.
 - On failure, HTTP 500 + plain text error message.
 
 ### POST
 
-Params (submitted via URL):
-- **name** (string): Server name. 
-- **ip** (string): Server IP address.
-- **port** (int): Server network port.
-- **terrain-name** (string): Name of the terrain file, without the '.terrn2' extension.
-- **max-clients** (int): Max number of clients.
-- **version** (string): Version of RoRNet protocol. Should have form 'RoRNet_NN'.
-- **is-official** (int{0/1}, optional): Advertise as official (default disabled).
-- **description** (string, optional)
-- **is-rcon-enabled** (int{0/1}, optional)
-- **uses-password** (int{0/1}, optional)
+Input: JSON payload
+
+{
+    "name": STRING,
+	"ip": STRING,
+	"port": INT,
+	"terrain-name": STRING (Name of the terrain file, without the '.terrn2' extension),
+	"max-clients": INT,
+	"version": STRING (Version of RoRNet protocol. Should have form 'RoRNet_NN'.),
+    "is-rcon-enabled": BOOL (optional),
+    "uses-password": BOOL (optional),
+    "description": STRING (optional),
+    "is-official": BOOL (Advertise as official, default: false)
+}
 
 Output: JSON in form:
 
@@ -50,9 +54,12 @@ Output: JSON in form:
 
 ### PUT (Heartbeat)
 
-Params (submitted via URL):
-- **challenge** (string)
-- **current-users** (int)
+Input: JSON payload
+
+{
+    "challenge: : STRING,
+    "users: [STRING] (array of user nicknames)
+}
 
 Output: JSON in form:
 
