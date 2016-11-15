@@ -20,7 +20,8 @@ $config = [
 		]
 	],
 	'heartbeat' => [
-		'timeout-seconds' => 90 // Timeout until server is excluded from serverlist.
+        'hide-timeout-sec' => 90, // Timeout until server is excluded from output
+        'purge-timeout-sec' => 1500 // Timeout until server is purged from DB
 	],
     'ip-lists' => [
         'official' => [

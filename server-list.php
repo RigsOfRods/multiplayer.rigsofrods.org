@@ -1,10 +1,10 @@
 <?php
 
-define('LOG_LEVEL_ERROR', 0);
+define('LOG_LEVEL_ERROR',   0);
 define('LOG_LEVEL_WARNING', 1);
-define('LOG_LEVEL_INFO', 2);
-define('LOG_LEVEL_DETAIL', 3);
-define('LOG_LEVEL_DEBUG', 4);
+define('LOG_LEVEL_INFO',    2);
+define('LOG_LEVEL_DETAIL',  3);
+define('LOG_LEVEL_DEBUG',   4);
 
 require 'config.include.php';
 
@@ -24,18 +24,22 @@ function log_error($msg)
 {
     log_msg(LOG_LEVEL_ERROR, $msg);
 }
+
 function log_warn($msg)
 {
     log_msg(LOG_LEVEL_WARNING, $msg);
 }
+
 function log_info($msg)
 {
     log_msg(LOG_LEVEL_INFO, $msg);
 }
+
 function log_detail($msg)
 {
     log_msg(LOG_LEVEL_DETAIL, $msg);
 }
+
 function log_debug($msg)
 {
     log_msg(LOG_LEVEL_DEBUG, $msg);
@@ -85,6 +89,17 @@ function get_json_input()
     return json_decode($in_json, true);
 }
 
+function check_and_purge_outdated()
+{
+    global $config, $mysqli;
+
+    $t = time() - $config['heartbeat']['purge-timeout-sec'];
+    $result = $mysqli->query("DELETE FROM `servers` WHERE `last-heartbeat` < $t;");
+    if ($result === false) {
+        log_error("Failed to purge outdated, message: " . $mysqli->error);
+    }
+}
+
 log_info("New request, method: {$_SERVER['REQUEST_METHOD']}");
 
 // -----------------------------------------------------------------------------
@@ -105,13 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $sql_and_version .= " AND `version` = '$version'";
     }
     
-    // PORTED FROM OLD SERVERLIST: delete old offline servers
-    $t         = time() - 1500; // Ported from old serverlist scripts
-    $purge_sql = "DELETE FROM `servers` WHERE `last-heartbeat` < $t;";
-    $mysqli->query($purge_sql); // We don't care about the result.
+    check_and_purge_outdated();
     
-    
-    $sql_and_heart = ' AND `last-heartbeat` >= ' . (time() - $config['heartbeat']['timeout-seconds']);
+    $sql_and_heart = ' AND `last-heartbeat` >= ' . (time() - $config['heartbeat']['hide-timeout-sec']);
     
     // Available servers
     $sql = "
@@ -305,13 +316,10 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die_json(503, $message);
     }
     $verified_level = 1;
-    /*
-    if ($is_official || in_array($_args['ip'], $config['ip-lists']['official']))
-    {
-    $verified_level = 2;
-    } 
-    */
-    $mysqli         = connect_mysqli_or_die($config);
+
+    $mysqli = connect_mysqli_or_die($config);
+    
+    check_and_purge_outdated();
     
     // Check servername is unique
     $t           = time() - 3600; // Ported from old serverlist scripts
@@ -455,6 +463,8 @@ else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
     ));
     
     $mysqli = connect_mysqli_or_die($config);
+    
+    check_and_purge_outdated();
     
     $challenge = $mysqli->real_escape_string($_args['challenge']);
     $sql       = "DELETE FROM `servers` WHERE `challenge` = '$challenge'";
