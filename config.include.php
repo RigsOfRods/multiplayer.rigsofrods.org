@@ -1,28 +1,28 @@
 <?php
 
 $config = [
-	'database' => [
-		"host"     => "localhost",
-		"name"     => "multiplayer",
-		"user"     => "dbuser",
-		"password" => "123456"
-	],
-	'protocols' => [
-		'supported' => [
-        	'RoRnet_2.31',
-			'RoRnet_2.32',
-			'RoRnet_2.33',
-			'RoRnet_2.34',
-			'RoRnet_2.35',
-			'RoRnet_2.36',
-			'RoRnet_2.37',
+    'database' => [
+        "host"     => "localhost",
+        "name"     => "multiplayer",
+        "user"     => "dbuser",
+        "password" => "123456"
+    ],
+    'protocols' => [
+        'supported' => [
+            'RoRnet_2.31',
+            'RoRnet_2.32',
+            'RoRnet_2.33',
+            'RoRnet_2.34',
+            'RoRnet_2.35',
+            'RoRnet_2.36',
+            'RoRnet_2.37',
             'RoRnet_2.38'
-		]
-	],
-	'heartbeat' => [
+        ]
+    ],
+    'heartbeat' => [
         'hide-timeout-sec' => 90, // Timeout until server is excluded from output
         'purge-timeout-sec' => 1500 // Timeout until server is purged from DB
-	],
+    ],
     'ip-lists' => [
         'official' => [
         ],
