@@ -22,18 +22,18 @@ Output: text/html page.
 
 Input: JSON payload
 
-{
-    "name": STRING,
-	"ip": STRING,
-	"port": INT,
-	"terrain-name": STRING (Name of the terrain file, without the '.terrn2' extension),
-	"max-clients": INT,
-	"version": STRING (Version of RoRNet protocol. Should have form 'RoRNet_NN'.),
-    "is-rcon-enabled": BOOL (optional),
-    "uses-password": BOOL (optional),
-    "description": STRING (optional),
-    "is-official": BOOL (Advertise as official, default: false)
-}
+	{
+	    "name": STRING,
+		"ip": STRING,
+		"port": INT,
+		"terrain-name": STRING (Name of the terrain file, without the '.terrn2' extension),
+		"max-clients": INT,
+		"version": STRING (Version of RoRNet protocol. Should have form 'RoRNet_NN'.),
+	    "is-rcon-enabled": BOOL (optional),
+	    "uses-password": BOOL (optional),
+	    "description": STRING (optional),
+	    "is-official": BOOL (Advertise as official, default: false)
+	}
 
 Output: JSON in form:
 
@@ -56,10 +56,10 @@ Output: JSON in form:
 
 Input: JSON payload
 
-{
-    "challenge: : STRING,
-    "users: [STRING] (array of user nicknames)
-}
+	{
+	    "challenge: : STRING,
+	    "users: [STRING] (array of user nicknames)
+	}
 
 Output: JSON in form:
 
