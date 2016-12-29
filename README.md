@@ -11,8 +11,9 @@ Requirements:
 
 Installation:
 
-Copy .php files from root directory to server
-Run 'multiplayer.sql' script to create + populate database 'multiplayer'
+1. Copy .php files from directory "publish" to your webserver.
+2. Run 'multiplayer.sql' script to create + populate database "multiplayer".
+3. Edit "config.include.php" file as necessary.
 
 ## Serverlist
 

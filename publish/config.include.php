@@ -5,7 +5,7 @@ $config = [
         "host"     => "localhost",
         "name"     => "multiplayer",
         "user"     => "dbuser",
-        "password" => "123456"
+        "password" => "12345"
     ],
     'protocols' => [
         'supported' => [
