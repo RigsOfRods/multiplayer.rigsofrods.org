@@ -200,15 +200,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             $url .= "{$row['ip']}:{$row['port']}/";
             $types = implode($type, ', ');
             
-            $country = geoip_country_name_by_name($row['ip']);
+            $country_html = htmlspecialchars(geoip_country_name_by_name($row['ip']));
+            $name_html = htmlspecialchars($name);
+            $terrn_html = htmlspecialchars($row['terrain-name']);
             
             print("
             <tr>
                 <td>{$row['current-users']} / {$row['max-clients']}</td>
                 <td>$types</td>
-                <td><a href='$url'>$name</a></td>
-                <td>{$row['terrain-name']}</td>
-                <td>$country</td>
+                <td><a href='$url'>$name_html</a></td>
+                <td>$terrn_html</td>
+                <td>$country_html</td>
             </tr>");
             
         }
@@ -427,7 +429,7 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
     
     $num_users  = (int) count($_args['users']);
     $challenge  = $mysqli->real_escape_string($_args['challenge']);
-    $json_users = json_encode($_args['users'], JSON_PRETTY_PRINT);
+    $json_users = $mysqli->real_escape_string(json_encode($_args['users'], JSON_PRETTY_PRINT));
     $t          = time();
     
     $sql = "UPDATE `servers`

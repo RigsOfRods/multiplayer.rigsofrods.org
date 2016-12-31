@@ -75,13 +75,15 @@ else
                 array_push($type, "password");
             }
             $types = implode($type, ', ');
+            $name_html = htmlspecialchars($name);
+            $terrn_html = htmlspecialchars($row['terrain-name']);
             
             $servlist_html[] =
             "<tr>
                 <td>{$row['current-users']} / {$row['max-clients']}</td>
                 <td>$types</td>
-                <td>$name</td>
-                <td>{$row['terrain-name']}</td>
+                <td>$name_html</td>
+                <td>$terrn_html</td>
             </tr>";
             
             $num_players_total += $row['current-users'];
