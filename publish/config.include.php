@@ -16,7 +16,8 @@ $config = [
             'RoRnet_2.35',
             'RoRnet_2.36',
             'RoRnet_2.37',
-            'RoRnet_2.38'
+            'RoRnet_2.38',
+            'RoRnet_2.40'
         ]
     ],
     'heartbeat' => [
