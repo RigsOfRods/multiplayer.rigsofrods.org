@@ -2,6 +2,19 @@
 
 Available online at http://multiplayer.rigsofrods.org
 
+## Setup
+
+Requirements:
+
+* PHP version 5.6+
+* PHP extension 'sockets' (http://php.net/manual/en/book.sockets.php)
+
+Installation:
+
+1. Copy .php files from directory "publish" to your webserver.
+2. Run 'multiplayer.sql' script to create + populate database "multiplayer".
+3. Edit "config.include.php" file as necessary.
+
 ## Serverlist
 
 Provides a RESTful API to register and query multiplayer servers. Uses JSON.

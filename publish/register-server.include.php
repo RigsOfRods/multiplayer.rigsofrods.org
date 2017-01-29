@@ -62,7 +62,11 @@ function verify_server($config, $ip, $port, $version)
     log_debug("verify_server() Socket connected OK");
     
     $poke_payload = "MasterServer";
-    $poke_msg = 1000; // RoRNet: MSG2_HELLO
+    $poke_msg = 1000; // RoRnet: MSG2_HELLO
+    if ($version === 'RoRnet_2.40')
+    {
+        $poke_msg = 1025;
+    }
     $poke_source = 5000; // (Magic) no error messages on that number
     $poke_payload_len = strlen($poke_payload);
     $poke_stream_id = 0;

@@ -1,9 +1,13 @@
--- Adminer 4.2.4 MySQL dump
+-- Adminer 4.2.5 MySQL dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+
+DROP DATABASE IF EXISTS `multiplayer`;
+CREATE DATABASE `multiplayer`;
+USE `multiplayer`;
 
 DROP TABLE IF EXISTS `servers`;
 CREATE TABLE `servers` (
@@ -28,7 +32,4 @@ CREATE TABLE `servers` (
   `has-password` tinyint(1) NOT NULL,
   `is-official` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
-
--- 2016-05-02 22:02:04
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;

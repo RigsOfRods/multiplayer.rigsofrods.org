@@ -1,0 +1,7 @@
+# URLs for multiplayer.rigsofrods.org 
+
+RewriteEngine On
+
+# Allow pretty paths without file extensions
+RewriteRule   ^server-list$      server-list.php
+RewriteRule   ^get-public-ip$    get-public-ip.php
