@@ -3,98 +3,6 @@
 require 'globals.include.php';
 require 'config.include.php';
 
-function log_msg($level, $msg)
-{
-    global $config;
-    
-    if ($level > $config['logging']['verbosity']) {
-        return;
-    }
-    $d    = new DateTime();
-    $line = $d->format('[Y-m-d H:i:s]') . " " . $msg . "\n";
-    file_put_contents($config['logging']['filename'], $line, FILE_APPEND);
-}
-
-function log_error($msg)
-{
-    log_msg(LOG_LEVEL_ERROR, $msg);
-}
-
-function log_warn($msg)
-{
-    log_msg(LOG_LEVEL_WARNING, $msg);
-}
-
-function log_info($msg)
-{
-    log_msg(LOG_LEVEL_INFO, $msg);
-}
-
-function log_detail($msg)
-{
-    log_msg(LOG_LEVEL_DETAIL, $msg);
-}
-
-function log_debug($msg)
-{
-    log_msg(LOG_LEVEL_DEBUG, $msg);
-}
-
-function die_json($http_code, $message)
-{
-    http_response_code($http_code);
-    $answer = array(
-        'result' => ($http_code == 200),
-        'message' => $message
-    );
-    log_info("Response: HTTP {$http_code}, message: {$message}");
-    log_detail("JSON:\n" . json_encode($answer, JSON_PRETTY_PRINT));
-    die(json_encode($answer));
-}
-
-function check_args_or_die($_args, $req_args)
-{
-    $missing = array();
-    foreach ($req_args as $key) {
-        if (!isset($_args[$key])) {
-            $missing[] = $key;
-        }
-    }
-    
-    if (count($missing) > 0) {
-        die_json(400, 'Missing required argument(s): ' . implode(", ", $missing));
-    }
-}
-
-function connect_mysqli_or_die($config)
-{
-    $db_config = $config['database'];
-    $mysqli    = new MySQLi($db_config['host'], $db_config['user'], $db_config['password'], $db_config['name']);
-    if ($mysqli->connect_errno != 0) {
-        log_error("Cannot connect to DB: {$mysqli->error}");
-        die_json(500, 'Server error, cannot connect to database.');
-    }
-    return $mysqli;
-}
-
-function get_json_input()
-{
-    $in_json = trim(file_get_contents('php://input'));
-    log_detail("JSON input:" . ($in_json != "" ? "\n{$in_json}" : " ~EMPTY~"));
-    return json_decode($in_json, true);
-}
-
-function check_and_purge_outdated()
-{
-    global $config, $mysqli;
-
-    $t = time() - $config['heartbeat']['purge-timeout-sec'];
-    $result = $mysqli->query("DELETE FROM `servers` WHERE `last-heartbeat` < $t;");
-    if ($result === false) {
-        log_error("Failed to purge outdated, message: " . $mysqli->error);
-    }
-}
-
 log_info("New request, method: {$_SERVER['REQUEST_METHOD']}");
 
 // -----------------------------------------------------------------------------
@@ -103,22 +11,22 @@ log_info("New request, method: {$_SERVER['REQUEST_METHOD']}");
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // Connect DB
     $db_config = $config['database'];
-    $mysqli    = new MySQLi($db_config['host'], $db_config['user'], $db_config['password'], $db_config['name']);
+    $mysqli = new MySQLi($db_config['host'], $db_config['user'], $db_config['password'], $db_config['name']);
     if ($mysqli->connect_errno != 0) {
         header("HTTP/1.1 500 Internal Server Error");
         die("Server error, cannot connect to database.");
     }
-    
+
     $sql_and_version = "";
     if (isset($_GET['version'])) {
         $version = $mysqli->real_escape_string($_GET['version']);
         $sql_and_version .= " AND `version` = '$version'";
     }
-    
+
     check_and_purge_outdated();
-    
+
     $sql_and_heart = ' AND `last-heartbeat` >= ' . (time() - $config['heartbeat']['hide-timeout-sec']);
-    
+
     // Available servers
     $sql = "
         SELECT
@@ -142,29 +50,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             `is-official`,
             (`current-users`/`max-clients`) DESC,
             name";
-    
+
     $result = $mysqli->query($sql);
     if ($result === false) {
         header("HTTP/1.1 500 Internal Server Error");
         die("Server error, cannot read database.");
     }
-   
-    
+
+
     if (isset($_GET["json"])) {
         header('content-type: application/json; charset: utf-8');
         $rows = array();
         while ($row = $result->fetch_assoc()) {
             foreach ($row as $key => $value) {
-              if(is_numeric($value))
-                $row[$key] = intval($value);
+                if (is_numeric($value))
+                    $row[$key] = intval($value);
             }
             $rows[] = $row;
-        }   
-        print json_encode($rows);        
+        }
+        print json_encode($rows);
     } else {// HTML for compatibility with RoRConfig
-      
+
         header('content-type: text/html; charset: utf-8');
-        
+
         print("
         <!DOCTYPE html>
         <html>
@@ -181,10 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             <th>Terrain</th>
             <th>Country</th>
         </tr>");
-        
+
         while ($row = $result->fetch_assoc()) {
             $type = array();
-            $url  = "rorserver://";
+            $url = "rorserver://";
             $name = $row['name'];
             if ($row['verified'] == 2) {
                 array_push($type, "ranked");
@@ -199,11 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             }
             $url .= "{$row['ip']}:{$row['port']}/";
             $types = implode($type, ', ');
-            
+
             $country_html = htmlspecialchars(geoip_country_name_by_name($row['ip']));
             $name_html = htmlspecialchars($name);
             $terrn_html = htmlspecialchars($row['terrain-name']);
-            
+
             print("
             <tr>
                 <td>{$row['current-users']} / {$row['max-clients']}</td>
@@ -212,9 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 <td>$terrn_html</td>
                 <td>$country_html</td>
             </tr>");
-            
+
         }
-        
+
         if ($result->num_rows == 0) {
             if (isset($_GET['version'])) {
                 print("<tr><td colspan='5'>No available servers found for your version.</td></tr>");
@@ -222,9 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 print("<tr><td colspan='5'>No available servers found.</td></tr>");
             }
         }
-        
+
         print("</table>");
-        
+
         // Full servers
         $sql = "
         SELECT
@@ -242,12 +150,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             $sql_and_version
         ORDER BY
             `is-official`, name";
-        
+
         $result = $mysqli->query($sql);
         if ($result === false) {
             exit("</body></html>"); // Whatever
         }
-        
+
         if ($result->num_rows > 0) {
             print("<h3>Full servers</h3>");
             print("<ul>");
@@ -260,8 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         }
         print("</body></html>");
     }
-    
-    
+
+
     $mysqli->close();
 }
 
@@ -270,9 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 // -----------------------------------------------------------------------------
 else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     header('content-type: application/json; charset: utf-8');
-    
+
     $_args = get_json_input();
-    
+
     // Check required arguments
     check_args_or_die($_args, array(
         'name',
@@ -282,31 +190,31 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         'max-clients',
         'version'
     ));
-    
+
     // Check IP blacklist
     if (in_array($_args['ip'], $config['ip-lists']['blacklist'])) {
         log_warn("Blacklisted IP: {$_args['ip']}");
         die_json(403, 'This server IP is blacklisted');
     }
-    
+
     // Check authority
     $is_official = 0;
-    
+
     if (in_array($_args['ip'], $config['ip-lists']['official'])) {
         $is_official = 1;
     }
-    
+
     require_once 'register-server.include.php';
-    
+
     $is_rcon_enabled = isset($_args['is-rcon-enabled']) && $_args['is-rcon-enabled'] == 1;
-    $uses_password   = isset($_args['uses-password']) && $_args['uses-password'] == 1;
-    
+    $uses_password = isset($_args['uses-password']) && $_args['uses-password'] == 1;
+
     $remote_ip = $_SERVER['REMOTE_ADDR'];
     if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
         $remote_ip = $_SERVER["HTTP_X_FORWARDED_FOR"];
     }
     $challenge = sha1(generate_random_key(255) + $remote_ip + $_args['ip'] + $_args['port'] + time());
-    
+
     $verify_result = verify_server($config, $_args['ip'], $_args['port'], $_args['version']);
     if ($verify_result === null) {
         $message = "Could not connect to your server and verify it's version. " . "Please check your Firewall or leave it as it is now to create a local only server. " . "Your server is NOT advertised on the Master server. " . "See also http://docs.rigsofrods.org/gameplay/multiplayer-server-setup/";
@@ -315,13 +223,13 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $verified_level = 1;
 
     $mysqli = connect_mysqli_or_die($config);
-    
+
     check_and_purge_outdated();
-    
+
     // Check servername is unique
-    $t           = time() - 3600; // Ported from old serverlist scripts
+    $t = time() - 3600; // Ported from old serverlist scripts
     $server_name = $mysqli->real_escape_string($_args['name']);
-    $uniq_sql    = "
+    $uniq_sql = "
         SELECT * 
         FROM `servers`
         WHERE
@@ -335,29 +243,30 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($uniq_result->num_rows > 0) {
         die_json(409, 'Your server name is already used.'); // HTTP 409 Conflict
     }
-    
+
     // Insert the server
     function fetch_and_escape_arg($arg_name, $default_val)
     {
         global $_args, $mysqli;
-        
+
         if (isset($_args[$arg_name])) {
-            return $mysqli->real_escape_string($_args[$arg_name]);
+            // PHP is pure garbage, strings needs to be converted to string
+            return strval($mysqli->real_escape_string($_args[$arg_name]));
         } else {
-            return $default_val;
+            return strval($default_val);
         }
     }
-    
-    $server_desc  = fetch_and_escape_arg('description', null);
-    $server_ip    = fetch_and_escape_arg('ip', null);
-    $server_port  = fetch_and_escape_arg('port', null);
+
+    $server_desc = fetch_and_escape_arg('description', null);
+    $server_ip = fetch_and_escape_arg('ip', null);
+    $server_port = fetch_and_escape_arg('port', null);
     $server_terrn = fetch_and_escape_arg('terrain-name', null);
-    $server_max   = fetch_and_escape_arg('max-clients', 0);
-    $server_ver   = fetch_and_escape_arg('version', null);
-    $server_pw    = fetch_and_escape_arg('uses-password', 0);
-    $server_rcon  = fetch_and_escape_arg('is-rcon-enabled', 0);
-    $t            = time();
-    
+    $server_max = fetch_and_escape_arg('max-clients', 0);
+    $server_ver = fetch_and_escape_arg('version', null);
+    $server_pw = fetch_and_escape_arg('uses-password', 0);
+    $server_rcon = fetch_and_escape_arg('is-rcon-enabled', 0);
+    $t = time();
+
     $sql = "
         INSERT INTO servers (
             `name`,
@@ -394,13 +303,13 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             '[]',
             '[]',
             '$is_official');";
-    
+
     $result = $mysqli->query($sql);
     if ($result === false) {
         log_error("Failed to add server to database: {$mysqli->error}");
         die_json(500, 'Failed to add server to database.');
     }
-    
+
     $answer = array(
         'result' => true,
         'message' => 'Server sucessfully registered',
@@ -419,19 +328,19 @@ else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 else if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
     header('content-type: application/json; charset: utf-8');
     $_args = get_json_input();
-    
+
     check_args_or_die($_args, array(
         'challenge',
         'users'
     ));
-    
+
     $mysqli = connect_mysqli_or_die($config);
-    
-    $num_users  = (int) count($_args['users']);
-    $challenge  = $mysqli->real_escape_string($_args['challenge']);
+
+    $num_users = (int)count($_args['users']);
+    $challenge = $mysqli->real_escape_string($_args['challenge']);
     $json_users = $mysqli->real_escape_string(json_encode($_args['users'], JSON_PRETTY_PRINT));
-    $t          = time();
-    
+    $t = time();
+
     $sql = "UPDATE `servers`
             SET
                 `last-heartbeat` = $t,
@@ -439,12 +348,12 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
                 `json-userlist`  = '$json_users'
             WHERE
                 `challenge` = '$challenge'";
-    
+
     if ($mysqli->query($sql) !== true) {
         log_error("Heartbeat: failed to update database, message: {$mysqli->error}");
         die_json(500, 'Server error, failed to update database.');
     }
-    
+
     die_json(200, 'Heartbeat OK');
 }
 
@@ -454,20 +363,20 @@ else if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
 else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
     header('content-type: application/json; charset: utf-8');
     $_args = get_json_input();
-    
+
     check_args_or_die($_args, array(
         'challenge'
     ));
-    
+
     $mysqli = connect_mysqli_or_die($config);
-    
+
     check_and_purge_outdated();
-    
+
     $challenge = $mysqli->real_escape_string($_args['challenge']);
-    $sql       = "DELETE FROM `servers` WHERE `challenge` = '$challenge'";
+    $sql = "DELETE FROM `servers` WHERE `challenge` = '$challenge'";
     if ($mysqli->query($sql) !== true) {
         die_json(500, 'Server error, failed to update database.');
     }
-    
+
     die_json(200, 'Success!');
 }
